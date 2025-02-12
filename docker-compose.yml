@@ -1,0 +1,8 @@
+services:
+  adhan-cast:
+    build: .
+    container_name: adhan-cast
+    environment:
+      - "TZ=${TZ}"
+    network_mode: host
+
