@@ -1,6 +1,10 @@
+import http.server
+import json
 import logging
 import os
 import pickle
+import socketserver
+import threading
 import time
 from datetime import datetime, timedelta
 
@@ -21,6 +25,8 @@ config = {
     "adhan_link": os.getenv("adhan_link"),
     "reminder_link": os.getenv("reminder_link"),
     "reminder_before": int(os.getenv("reminder_before")),
+    "status_port": int(os.getenv("status_port", 5000)),
+    "time_zone": os.getenv("TZ"),
 }
 
 
@@ -40,6 +46,7 @@ def init_pickle_data():
     data["PrayerTimes"] = prayerTimes["calendar"][the_month_index][
         the_day_index.__str__()
     ]
+    data["PrayerTimes"].pop(1)  # Remove the sunrise time
     data["ReminderTimes"] = [
         (
             datetime.strptime(time_str, "%H:%M")
@@ -57,6 +64,36 @@ def get_pickle_data():
     with open("mawaqit.pkl", "rb") as f:
         data = pickle.load(f)
         return data
+
+
+server_status = {
+    "status": "OK",
+    "mosque_name": "",
+    "chromecast_name": "",
+    "prayer_times": [],
+}
+
+
+class StatusHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            # Convert dictionary to JSON and send response
+            server_status["time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.wfile.write(json.dumps(server_status).encode("utf-8"))
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+
+def run_server():
+    with socketserver.TCPServer(
+        ("0.0.0.0", config["status_port"]), StatusHandler
+    ) as httpd:
+        logging.info("Server started on port {}".format(config["status_port"]))
+        httpd.serve_forever()
 
 
 if __name__ == "__main__":
@@ -81,25 +118,37 @@ if __name__ == "__main__":
         logging.error(f"MawaqitClient: Failed to authenticate {e}")
         exit(1)
 
-    try:
-        chromecast_device = get_chromecast_device(config["chromecast"])
+    # try:
+    #     chromecast_device = get_chromecast_device(config["chromecast"])
 
-        logging.info(
-            f"Chromecast device {chromecast_device.cast_info.friendly_name} found"
-        )
+    #     logging.info(
+    #         f"Chromecast device {chromecast_device.cast_info.friendly_name} found"
+    #     )
 
-    except Exception as e:
-        logging.error(f"Failed to get Chromecast device {e}")
-        exit(1)
+    # except Exception as e:
+    #     logging.error(f"Failed to get Chromecast device {e}")
+    #     exit(1)
 
     init_pickle_data()
 
+    server_status["status"] = "OK"
+    server_status["mosque_name"] = mawaqitClient.mosque_name
+    # server_status["chromecast_name"] = chromecast_device.cast_info.friendly_name
+
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+    logging.info(f"Starting time: " + datetime.now().strftime("%H:%M"))
+
     while True:
         hh_mm = datetime.now().strftime("%H:%M")
-        logging.info(f"Current time: {hh_mm}")
+
+        if hh_mm.split(":")[-1] == "00":
+            # log the current time every hour
+            logging.info(f"Current time: {hh_mm}")
 
         pickle_data = get_pickle_data()
         prayer_times = pickle_data["PrayerTimes"]
+        server_status["prayer_times"] = prayer_times
         reminder_times = pickle_data["ReminderTimes"]
 
         if hh_mm == "00:00":
