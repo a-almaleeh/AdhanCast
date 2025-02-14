@@ -118,22 +118,22 @@ if __name__ == "__main__":
         logging.error(f"MawaqitClient: Failed to authenticate {e}")
         exit(1)
 
-    # try:
-    #     chromecast_device = get_chromecast_device(config["chromecast"])
+    try:
+        chromecast_device = get_chromecast_device(config["chromecast"])
 
-    #     logging.info(
-    #         f"Chromecast device {chromecast_device.cast_info.friendly_name} found"
-    #     )
+        logging.info(
+            f"Chromecast device {chromecast_device.cast_info.friendly_name} found"
+        )
 
-    # except Exception as e:
-    #     logging.error(f"Failed to get Chromecast device {e}")
-    #     exit(1)
+    except Exception as e:
+        logging.error(f"Failed to get Chromecast device {e}")
+        exit(1)
 
     init_pickle_data()
 
     server_status["status"] = "OK"
     server_status["mosque_name"] = mawaqitClient.mosque_name
-    # server_status["chromecast_name"] = chromecast_device.cast_info.friendly_name
+    server_status["chromecast_name"] = chromecast_device.cast_info.friendly_name
 
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
