@@ -28,6 +28,7 @@ class MawaqitClient:
             "Api-Access-Token": "",
             "Content-Type": "application/json",
         }
+        self.mosque_name = None
 
     def get_api_access_token(self):
         """Retrieves the API access token using basic authentication."""
@@ -72,6 +73,7 @@ class MawaqitClient:
         """
         mosque = self.all_mosques_neighborhood()[0]
         mosque_id = mosque["uuid"]
+        self.mosque_name = mosque["slug"]
 
         if self.headers["Api-Access-Token"] == "":
             self.headers["Api-Access-Token"] = self.get_api_access_token()
