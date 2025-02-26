@@ -17,15 +17,15 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
 config = {
-    "latitude": os.getenv("latitude"),
-    "longitude": os.getenv("longitude"),
-    "username": os.getenv("username"),
-    "password": os.getenv("password"),
-    "chromecast": os.getenv("chromecast"),
-    "adhan_link": os.getenv("adhan_link"),
-    "reminder_link": os.getenv("reminder_link"),
-    "reminder_before": int(os.getenv("reminder_before")),
-    "status_port": int(os.getenv("status_port", 5000)),
+    "latitude": os.getenv("LATITUDE"),
+    "longitude": os.getenv("LONGITUDE"),
+    "username": os.getenv("USERNAME"),
+    "password": os.getenv("PASSWORD"),
+    "chromecast": os.getenv("CHROMECAST"),
+    "adhan_link": os.getenv("ADHAN_LINK"),
+    "reminder_link": os.getenv("REMINDER_LINK"),
+    "reminder_before": int(os.getenv("REMINDER_BEFORE")),
+    "status_port": int(os.getenv("STATUS_PORT", 5000)),
     "time_zone": os.getenv("TZ"),
 }
 
@@ -142,10 +142,6 @@ if __name__ == "__main__":
     while True:
         hh_mm = datetime.now().strftime("%H:%M")
 
-        if hh_mm.split(":")[-1] == "00":
-            # log the current time every hour
-            logging.info(f"Current time: {hh_mm}")
-
         pickle_data = get_pickle_data()
         prayer_times = pickle_data["PrayerTimes"]
         server_status["prayer_times"] = prayer_times
@@ -156,17 +152,15 @@ if __name__ == "__main__":
             init_pickle_data()
 
         if hh_mm in prayer_times:
-            logging.info("Casting Adhan")
             cast_to_chromecast(
                 config["adhan_link"],
                 chromecast_device,
             )
 
         if hh_mm in reminder_times:
-            logging.info("Casting reminder")
             cast_to_chromecast(
                 config["reminder_link"],
                 chromecast_device,
             )
 
-        time.sleep(60)
+        time.sleep(60 - datetime.now().second)

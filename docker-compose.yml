@@ -1,8 +1,17 @@
 services:
   adhan-cast:
     build: .
-    container_name: adhan-cast
+    container_name: adhancast
     environment:
       - "TZ=${TZ}"
+      - "adhan_link=${ADHAN_LINK}"
+      - "chromecast=${CHROMECAST}"
+      - "latitude=${LATITUDE}"
+      - "longitude=${LONGITUDE}"
+      - "username=${USERNAME}"
+      - "password=${PASSWORD}"
+      - "reminder_before=${REMINDER_BEFORE}"
+      - "reminder_link=${REMINDER_LINK}"
+      - "status_port=${STATUS_PORT}"
     network_mode: host
-
+    restart: on-failure
